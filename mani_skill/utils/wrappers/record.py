@@ -1,7 +1,9 @@
 import copy
 import time
 from dataclasses import dataclass
+import os
 from pathlib import Path
+from PIL import Image
 from typing import Callable, List, Optional, Union
 
 import gymnasium as gym
@@ -217,6 +219,7 @@ class RecordEpisode(gym.Wrapper):
         output_dir: str,
         save_trajectory: bool = True,
         trajectory_name: Optional[str] = None,
+        save_each_image: bool = False,
         save_video: bool = True,
         info_on_video: bool = False,
         save_on_reset: bool = True,
@@ -251,6 +254,7 @@ class RecordEpisode(gym.Wrapper):
 
         self.save_on_reset = save_on_reset
         self.save_trajectory = save_trajectory
+        self.save_each_image = save_each_image
         if self.base_env.num_envs > 1 and save_video:
             assert (
                 max_steps_per_video is not None
@@ -289,6 +293,8 @@ class RecordEpisode(gym.Wrapper):
             raise ValueError(
                 "Cannot turn info_on_video=True when the number of environments parallelized is > 1"
             )
+        if self.save_each_image:
+            os.makedirs(Path(self.output_dir) / "frames", exist_ok=True)
         self.video_nrows = int(np.sqrt(self.unwrapped.num_envs))
         self._avoid_overwriting_video = avoid_overwriting_video
 
@@ -517,8 +523,11 @@ class RecordEpisode(gym.Wrapper):
                 and self._video_steps >= self.max_steps_per_video
             ):
                 self.flush_video()
+        
         self._elapsed_record_steps += 1
+
         return obs, rew, terminated, truncated, info
+
 
     def flush_trajectory(
         self,
@@ -739,6 +748,7 @@ class RecordEpisode(gym.Wrapper):
         verbose=False,
         ignore_empty_transition=True,
         save: bool = True,
+        save_each_image: bool = False,
     ):
         """
         Flush a video of the recorded episode(s) anb by default saves it to disk
@@ -755,6 +765,12 @@ class RecordEpisode(gym.Wrapper):
         if ignore_empty_transition and len(self.render_images) == 1:
             return
         if save:
+            # Save output images
+            if self.save_each_image:
+                for i, img in enumerate(self.render_images):
+                    frame_fp = Path(self.output_dir) / "frames" / f"{i}.png"
+                    Image.fromarray(img).save(frame_fp)
+            # Save video 
             self._video_id += 1
             if name is None:
                 video_name = "{}".format(self._video_id)
@@ -790,7 +806,7 @@ class RecordEpisode(gym.Wrapper):
             # Handle the last episode only when `save_on_reset=True`
             if self.save_on_reset and self._trajectory_buffer is not None:
                 self.flush_trajectory(
-                    ignore_empty_transition=True,
+                    ignore_empty_transition=False,
                     env_idxs_to_flush=np.arange(self.num_envs),
                 )
             if self.clean_on_close:
