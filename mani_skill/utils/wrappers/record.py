@@ -11,7 +11,6 @@ import h5py
 import numpy as np
 import sapien.physx as physx
 import torch
-import torchvision
 
 from mani_skill import get_commit_info
 from mani_skill.envs.sapien_env import BaseEnv
@@ -525,10 +524,6 @@ class RecordEpisode(gym.Wrapper):
             ):
                 self.flush_video()
         
-        # Save frames for feedback structuring module 
-        # if self.save_traj_savfreq is not None: 
-
-
         self._elapsed_record_steps += 1
 
         return obs, rew, terminated, truncated, info

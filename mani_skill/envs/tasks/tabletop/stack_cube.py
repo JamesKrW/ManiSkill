@@ -123,11 +123,6 @@ class StackCubeEnv(BaseEnv):
         is_cubeA_static = self.cubeA.is_static(lin_thresh=1e-2, ang_thresh=0.5)
         is_cubeA_grasped = self.agent.is_grasping(self.cubeA)
         success = is_cubeA_on_cubeB * is_cubeA_static * (~is_cubeA_grasped)
-        # print('is_cubeA_on_cubeB:', is_cubeA_on_cubeB)
-        # print('is_cubeA_static:', is_cubeA_static)
-        # if (is_cubeA_static * is_cubeA_on_cubeB).any():
-        #     print('static and on:', is_cubeA_static * is_cubeA_on_cubeB)
-        #     input()
         return {
             "is_cubeA_grasped": is_cubeA_grasped,
             "is_cubeA_on_cubeB": is_cubeA_on_cubeB,
